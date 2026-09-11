@@ -2,7 +2,14 @@ const fs = require("fs");
 const path = require("path");
 const { DatabaseSync } = require("node:sqlite");
 
-const dbPath = process.env.DATABASE_PATH || path.join(__dirname, "..", "data", "bluetag.db");
+// On Vercel (and most serverless hosts) the app directory is read-only; only
+// /tmp is writable. Fall back there so the DB can be created. Note: /tmp is
+// ephemeral and per-instance, so data resets on cold starts and the demo data
+// is re-seeded on each boot.
+const defaultPath = process.env.VERCEL
+  ? "/tmp/bluetag.db"
+  : path.join(__dirname, "..", "data", "bluetag.db");
+const dbPath = process.env.DATABASE_PATH || defaultPath;
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 const db = new DatabaseSync(dbPath);
