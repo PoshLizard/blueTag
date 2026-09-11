@@ -31,20 +31,29 @@ function searchItems({ q, category, kind }) {
     WHERE items.status != 'removed'
   `;
 
+  const params = [];
+
   if (q) {
-    sql += ` AND items.title || ' ' || items.description || ' ' || items.location LIKE '%${q}%'`;
+    // Bind the search term as a parameter so user input can never alter the
+    // query structure. LIKE wildcards in the input are escaped so the box
+    // does a literal substring match.
+    const escaped = q.replace(/[\\%_]/g, (ch) => "\\" + ch);
+    sql += ` AND items.title || ' ' || items.description || ' ' || items.location LIKE ? ESCAPE '\\'`;
+    params.push(`%${escaped}%`);
   }
 
   if (category && category !== "all") {
-    sql += ` AND items.category = '${category}'`;
+    sql += " AND items.category = ?";
+    params.push(category);
   }
 
   if (kind && kind !== "all") {
-    sql += ` AND items.kind = '${kind}'`;
+    sql += " AND items.kind = ?";
+    params.push(kind);
   }
 
   sql += " ORDER BY items.created_at DESC LIMIT 50";
-  return db.prepare(sql).all();
+  return db.prepare(sql).all(...params);
 }
 
 router.get("/", (req, res) => {
