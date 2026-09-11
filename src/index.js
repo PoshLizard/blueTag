@@ -57,6 +57,13 @@ app.use((err, _req, res, _next) => {
   res.status(500).render("500", { title: "Server error" });
 });
 
-app.listen(port, "0.0.0.0", () => {
-  console.log(`BlueTag listening on http://0.0.0.0:${port}`);
-});
+// Only start a listener when run directly (local dev, Docker, Render, etc.).
+// On serverless hosts like Vercel the platform invokes the exported app
+// instead of us binding a port.
+if (require.main === module) {
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`BlueTag listening on http://0.0.0.0:${port}`);
+  });
+}
+
+module.exports = app;
